@@ -13,7 +13,7 @@ from telebot import types
 
 # external library imports
 from varaibles import *
-
+import osintbotlib.network as network
 
 
 
@@ -216,6 +216,47 @@ def print_help_menu(msg):
         return
     TelegramOsintProject.reply_to(msg, text=COMMAND_LIST, parse_mode="markdown")
 
+
+
+
+
+
+@TelegramOsintProject.message_handler(commands=["checkip"])
+def check_ip_addrs(msg):
+    command_inviter = msg.from_user
+    inviter_id = str(command_inviter.id)
+    if not is_yetkili:
+        return
+    
+    str_data = msg.text.split(" ")
+    if len(str_data) != 2:
+        TelegramOsintProject.reply_to(msg, "Misuse detected.\nExample: `/checkip 1.1.1.1`",parse_mode="markdown")
+    else:
+        target_ip_is = str_data[1] 
+        ipinfo_io_data = network.GetIpQuery(str(target_ip_is))
+        if ipinfo_io_data[0] == "false":
+            TelegramOsintProject.reply_to(msg, "İşlem başarısız oldu.\n"+str(ipinfo_io_data[1]))
+        else:
+            data = ipinfo_io_data[1]
+            output_data_is = f"""Kontrol sonuçları:\n
+Adres: `{str(data["ip"])}`
+"""                
+            if "hostname" in data:
+                output_data_is += f"""Hostname: `{str(data["hostname"])}`\n"""
+            if "city" in data:
+                output_data_is += f"""Şehir: `{str(data["city"])}`\n"""
+            if "region" in data:
+                output_data_is += f"""Bölge: `{str(data["region"])}`\n"""
+            if "loc" in data:
+                output_data_is += f"""Konum: `{str(data["loc"])}`\n"""
+            if "org" in data:
+                output_data_is += f"""Organizasyon: `{str(data["org"])}`\n"""
+            if "postal" in data:
+                output_data_is += f"""Posta kodu: `{str(data["postal"])}`\n"""
+            if "timezone" in data:
+                output_data_is += f"""Saat dilimi: `{str(data["timezone"])}`\n"""
+
+            TelegramOsintProject.send_message(chat_id=msg.chat.id,text=output_data_is,parse_mode="markdown")
 
 
 # run loop
