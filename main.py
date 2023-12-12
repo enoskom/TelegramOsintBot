@@ -127,5 +127,96 @@ TelegramOsintProject = telebot.TeleBot(token=TELEGRAM_BOT_TOKEN)
 generate_owner_user(OWNER_TELEGRAM_ID)
 
 
+@TelegramOsintProject.message_handler(commands=["newadmin"])
+def add_new_admin(msg): 
+    command_inviter = msg.from_user
+    inviter_id = str(command_inviter.id)
+    
+    if not is_owner(inviter_id):
+        return
+    
+    if msg.reply_to_message != None:
+        results_is = add_new_admin(str(msg.reply_to_message.from_user.id))
+        if results_is[0] != "true":
+            TelegramOsintProject.reply_to(msg, f"Hata: {str(results_is[1])}")
+        else:
+            TelegramOsintProject.reply_to(msg, f"işlem başarılı: {str(results_is[1])}")
+    elif len(msg.text.split(" ")) >= 2:
+        target_user_id = msg.text.split(" ")[1]
+        if not target_user_id.isnumeric():
+            err_msg = "[ - ] Hata: Kullanıcı id si nümerik olmalıdır."
+            TelegramOsintProject.reply_to(msg, text=err_msg)
+            return                    
+        results_is = add_new_admin(str(target_user_id))
+        TelegramOsintProject.reply_to(msg, text=results_is[1])
+        return
+    else:
+        TelegramOsintProject.reply_to(msg,"Lütfen eklenecek kişinin mesajını yanıtlayınız.")
+        return 
+
+
+@TelegramOsintProject.message_handler(commands=["deladmin"])
+def delete_admin(msg):
+    command_inviter = msg.from_user
+    inviter_id = str(command_inviter.id)
+    
+    if not is_owner(inviter_id):
+        return
+        
+    if msg.reply_to_message != None:
+        target_id = str(msg.reply_to_message.from_user.id)
+        targetFullname= str(msg.reply_to_message.from_user.full_name)
+        unadm_status = un_admin(target_id)
+        TelegramOsintProject.reply_to(msg, unadm_status[1])
+        return
+    elif len(msg.text.split(" ")) >= 2:
+        target_user_id = msg.text.split(" ")[1]
+        if not target_user_id.isnumeric():
+            err_msg = "[ - ] Hata: Kullanıcı id si nümerik olmalıdır."
+            TelegramOsintProject.reply_to(msg, text=err_msg)
+            return    
+        results_is = un_admin(str(target_user_id))
+        TelegramOsintProject.reply_to(msg, text=results_is[1])
+        return
+    else:
+        TelegramOsintProject.reply_to(msg, "Lütfen bir mesaj yanıtlayınız.")
+        return
+
+
+
+
+@TelegramOsintProject.message_handler(commands=["checkadmin"])
+def admin_control(msg):
+    command_inviter = msg.from_user
+    inviter_id = str(command_inviter.id)
+    if not is_yetkili(inviter_id):
+        return
+        
+    if msg.reply_to_message != None:
+        target_id = str(msg.reply_to_message.from_user.id)
+        target_username = str(msg.reply_to_message.from_user.username)
+        if is_yetkili(target_id):
+            TelegramOsintProject.reply_to(msg, f"USER: @{str(target_username)}\nID: {str(target_id)}\nDurum: yetkili ✅ ")
+        else:
+            TelegramOsintProject.reply_to(msg, f"USER: @{str(target_username)}\nID: {str(target_id)}\nDurum yetkisiz ❌ ")
+    else:
+        target_id = str(msg.from_user.id)
+        target_username = str(msg.from_user.username)
+        if is_yetkili(target_id):
+            TelegramOsintProject.reply_to(msg, f"USER: @{str(target_username)}\nID: {str(target_id)}\nDurum: yetkili ✅ ")
+        else:
+            TelegramOsintProject.reply_to(msg, f"USER: @{str(target_username)}\nID: {str(target_id)}\nDurum yetkisiz ❌ ")
+
+
+@TelegramOsintProject.message_handler(commands=["help", "start"])
+def print_help_menu(msg):
+    command_inviter = msg.from_user
+    inviter_id = str(command_inviter.id)
+    if not is_yetkili:
+        return
+    TelegramOsintProject.reply_to(msg, text=COMMAND_LIST, parse_mode="markdown")
+
+
+
 # run loop
 TelegramOsintProject.infinity_polling()
